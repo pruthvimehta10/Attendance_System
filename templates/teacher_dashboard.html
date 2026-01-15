@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teacher Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <div class="container py-4">
+        <h3>Teacher Dashboard</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, msg in messages %}
+        <div class="alert alert-{{category}}">{{ msg }}</div>
+        {% endfor %} {% endif %} {% endwith %} {% if active_session %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>Active session (ID: {{ active_session.id }})</h5>
+                <p>Ends at: {{ active_session.end_time }} UTC</p>
+                <p>Remaining: {{ remaining|int }} seconds</p>
+                
+                {% if active_session.qr_code %}
+                <div class="mt-3">
+                    <h6>QR Code for Attendance:</h6>
+                    <img src="{{ url_for('teacher.generate_qr_code', session_id=active_session.id) }}" alt="QR Code" class="img-fluid" style="max-width: 200px;">
+                    <p class="text-muted small mt-2">Students can scan this QR code to mark attendance</p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('teacher.view_attendance', session_id=active_session.id) }}" class="btn btn-primary">View Attendance</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>No active session</h5>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('teacher.start_session') }}">
+            <div class="input-group mb-3" style="max-width: 300px;">
+                <input type="number" name="minutes" class="form-control" value="5" min="1" max="60">
+                <button class="btn btn-success" type="submit">Start Session</button>
+            </div>
+        </form>
+
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+</body>
+
+</html>

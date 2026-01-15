@@ -1,0 +1,95 @@
+# Kubernetes Deployment for Flask Attendance System
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: attendance-system
+  labels:
+    app: attendance-system
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: attendance-system
+  template:
+    metadata:
+      labels:
+        app: attendance-system
+    spec:
+      containers:
+      - name: attendance-system
+        image: your-registry/attendance-system:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: attendance-secrets
+              key: secret-key
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: attendance-secrets
+              key: database-url
+        - name: FLASK_ENV
+          value: "production"
+        - name: PORT
+          value: "5000"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: attendance-system-service
+spec:
+  selector:
+    app: attendance-system
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: attendance-system-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+  - hosts:
+    - yourdomain.com
+    secretName: attendance-system-tls
+  rules:
+  - host: yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: attendance-system-service
+            port:
+              number: 80

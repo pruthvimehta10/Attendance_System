@@ -1,0 +1,8 @@
+flask>=2.2
+flask-login
+flask-sqlalchemy
+python-dotenv
+werkzeug
+qrcode[pil]
+pillow
+gunicorn
