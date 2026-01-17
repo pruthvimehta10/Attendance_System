@@ -44,46 +44,27 @@ def start_session():
     minutes = int(request.form.get('minutes', 5))
     start = datetime.utcnow()
     end = start + timedelta(minutes=minutes)
-    teacher_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     
-    # Generate unique QR code for this session
-    qr_code_uuid = str(uuid.uuid4())
+    # Use actual network IP instead of localhost
+    import socket
+    teacher_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if teacher_ip == '127.0.0.1' or teacher_ip == 'localhost':
+        # Get actual network IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        teacher_ip = s.getsockname()[0]
+        s.close()
     
     session = AttendanceSession(
         teacher_id=current_user.id, 
         start_time=start, 
         end_time=end, 
-        teacher_ip=teacher_ip,
-        qr_code=qr_code_uuid
+        teacher_ip=teacher_ip
     )
     db.session.add(session)
     db.session.commit()
     flash(f'Attendance session started for {minutes} minutes.', 'success')
     return redirect(url_for('teacher.dashboard'))
-
-
-@teacher_bp.route('/qr-code/<int:session_id>')
-@login_required
-@teacher_required
-def generate_qr_code(session_id):
-    session = AttendanceSession.query.get_or_404(session_id)
-    if session.teacher_id != current_user.id:
-        flash('Access denied.', 'danger')
-        return redirect(url_for('teacher.dashboard'))
-    
-    # Generate QR code
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(session.qr_code)
-    qr.make(fit=True)
-    
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Save to memory
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    
-    return send_file(img_io, mimetype='image/png')
 
 
 @teacher_bp.route('/attendance/<int:session_id>')

@@ -41,21 +41,19 @@ def mark_attendance():
         flash('Session not found.', 'danger')
         return redirect(url_for('student.dashboard'))
 
-    # checks
+    # Check if session is still active
     if now > session.end_time:
         flash('Session is closed.', 'danger')
         return redirect(url_for('student.dashboard'))
 
-    student_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if student_ip != session.teacher_ip:
-        flash('IP mismatch: you must be on the same network as the teacher.', 'danger')
-        return redirect(url_for('student.dashboard'))
-
+    # Check if already marked
     existing = AttendanceRecord.query.filter_by(session_id=session.id, student_id=current_user.id).first()
     if existing:
         flash('Attendance already recorded.', 'info')
         return redirect(url_for('student.dashboard'))
 
+    # Mark attendance
+    student_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     record = AttendanceRecord(session_id=session.id, student_id=current_user.id, timestamp=now, student_ip=student_ip)
     db.session.add(record)
     db.session.commit()
