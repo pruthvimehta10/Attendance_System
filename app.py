@@ -109,6 +109,43 @@ def _seed_sample_users(app):
 
 def create_app():
     print('[create_app] create_app() called — starting application factory.', flush=True)
+
+    # ------------------------------------------------------------------ #
+    # DEBUG: Inspect DATABASE_URL resolution                               #
+    # ------------------------------------------------------------------ #
+    raw_db_url = os.environ.get('DATABASE_URL')
+    print(f'[create_app] Raw DATABASE_URL = {raw_db_url!r}', flush=True)
+
+    # Print every env var whose name contains 'DATABASE' or 'POSTGRES' so
+    # we can see exactly what Railway has injected into the environment.
+    print('[create_app] Environment variables containing DATABASE or POSTGRES:', flush=True)
+    for key, value in sorted(os.environ.items()):
+        if 'DATABASE' in key.upper() or 'POSTGRES' in key.upper():
+            # Mask passwords but keep enough context to be useful.
+            try:
+                from urllib.parse import urlparse as _up
+                _p = _up(value)
+                if _p.password:
+                    display = value.replace(_p.password, '***')
+                else:
+                    display = value
+            except Exception:
+                display = value
+            print(f'[create_app]   {key} = {display!r}', flush=True)
+
+    # Detect if the reference variable was never resolved by Railway and
+    # came through as a literal placeholder string like ${{Postgres.DATABASE_URL}}.
+    if raw_db_url and raw_db_url.startswith('${{') and raw_db_url.endswith('}}'):
+        print(
+            f'[create_app] WARNING: DATABASE_URL looks like an unresolved Railway '
+            f'reference variable ({raw_db_url!r}). The variable substitution did not '
+            f'occur — the app will fall back to SQLite. Check that the Postgres service '
+            f'is attached to this service in the Railway dashboard and that the reference '
+            f'variable is spelled correctly.',
+            flush=True,
+        )
+    # ------------------------------------------------------------------ #
+
     app = Flask(__name__)
 
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
