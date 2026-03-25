@@ -1,6 +1,5 @@
 import os
-import logging
-from datetime import timedelta
+import traceback
 
 from flask import Flask
 from database import db
@@ -10,7 +9,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 login_manager = LoginManager()
-logger = logging.getLogger(__name__)
 
 
 def _init_db(app):
@@ -22,20 +20,32 @@ def _init_db(app):
     the SQL file is not present.
     """
     sql_path = os.path.join(os.path.dirname(__file__), 'init_db.sql')
+    print(f'[init_db] SQL file path: {sql_path}', flush=True)
+
     if not os.path.exists(sql_path):
-        logger.warning('init_db.sql not found — skipping automatic DB init.')
+        print('[init_db] WARNING: init_db.sql not found — skipping automatic DB init.', flush=True)
         return
 
     db_url = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    # Mask credentials for safe logging: show scheme + host only
+    try:
+        from urllib.parse import urlparse as _urlparse
+        _p = _urlparse(db_url)
+        masked_url = f'{_p.scheme}://***:***@{_p.hostname}:{_p.port or 5432}{_p.path}'
+    except Exception:
+        masked_url = '<unparseable>'
+    print(f'[init_db] DATABASE_URL (masked): {masked_url}', flush=True)
+
     if not db_url.startswith('postgresql'):
         # SQLite / other backends: rely on SQLAlchemy's create_all() instead.
-        logger.info('Non-PostgreSQL database detected — skipping init_db.sql.')
+        print('[init_db] Non-PostgreSQL database detected — skipping init_db.sql.', flush=True)
         return
 
     try:
         import psycopg2
         from urllib.parse import urlparse
 
+        print('[init_db] Connecting to PostgreSQL…', flush=True)
         parsed = urlparse(db_url)
         conn = psycopg2.connect(
             dbname=parsed.path.lstrip('/'),
@@ -45,15 +55,18 @@ def _init_db(app):
             port=parsed.port or 5432,
         )
         conn.autocommit = True
+        print('[init_db] Connection established. Reading SQL file…', flush=True)
         with open(sql_path, 'r') as fh:
             sql = fh.read()
+        print(f'[init_db] Executing {len(sql)} bytes of SQL…', flush=True)
         with conn.cursor() as cur:
             cur.execute(sql)
         conn.close()
-        logger.info('Database initialised successfully from init_db.sql.')
+        print('[init_db] Database initialised successfully from init_db.sql.', flush=True)
     except Exception as exc:
-        # Log but do not crash — the app can still start if tables already exist.
-        logger.error('Database initialisation failed: %s', exc)
+        # Print full traceback so the exact failure is visible in gunicorn logs.
+        print('[init_db] ERROR: Database initialisation failed:', flush=True)
+        print(traceback.format_exc(), flush=True)
 
 
 def _seed_sample_users(app):
@@ -63,6 +76,7 @@ def _seed_sample_users(app):
     are hashed with Werkzeug's default algorithm so they are immediately usable
     through the login form.
     """
+    print('[seed] Starting sample user seed…', flush=True)
     try:
         from models import User
         from werkzeug.security import generate_password_hash
@@ -85,14 +99,16 @@ def _seed_sample_users(app):
                     added.append(email)
             if added:
                 db.session.commit()
-                logger.info('Seeded sample users: %s', ', '.join(added))
+                print(f'[seed] Seeded sample users: {", ".join(added)}', flush=True)
             else:
-                logger.info('Sample users already present — skipping seed.')
+                print('[seed] Sample users already present — skipping seed.', flush=True)
     except Exception as exc:
-        logger.error('Failed to seed sample users: %s', exc)
+        print('[seed] ERROR: Failed to seed sample users:', flush=True)
+        print(traceback.format_exc(), flush=True)
 
 
 def create_app():
+    print('[create_app] create_app() called — starting application factory.', flush=True)
     app = Flask(__name__)
 
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
