@@ -78,3 +78,26 @@ def view_attendance(session_id):
     
     records = AttendanceRecord.query.filter_by(session_id=session_id).all()
     return render_template('attendance_view.html', session=session, records=records)
+
+
+@teacher_bp.route('/recent-sessions')
+@login_required
+@teacher_required
+def recent_sessions():
+    """Get recent sessions for the current teacher (up to 5)"""
+    sessions = AttendanceSession.query.filter_by(teacher_id=current_user.id)\
+        .order_by(AttendanceSession.start_time.desc())\
+        .limit(5)\
+        .all()
+    
+    session_data = []
+    for session in sessions:
+        attendance_count = AttendanceRecord.query.filter_by(session_id=session.id).count()
+        session_data.append({
+            'id': session.id,
+            'start_time': session.start_time.isoformat(),
+            'end_time': session.end_time.isoformat(),
+            'attendance_count': attendance_count
+        })
+    
+    return jsonify({'sessions': session_data})

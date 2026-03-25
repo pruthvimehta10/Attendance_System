@@ -15,7 +15,10 @@ def create_app():
     app = Flask(__name__)
 
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///attendance.db')
+    db_url = os.environ.get('DATABASE_URL', 'sqlite:///attendance.db')
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db.init_app(app)
@@ -31,6 +34,10 @@ def create_app():
             return User.query.get(int(user_id))
         except Exception:
             return None
+
+    # Add custom filter for IST time formatting
+    from utils import format_ist_time
+    app.jinja_env.filters['format_ist_time'] = format_ist_time
 
     # Blueprints
     from auth import auth_bp
