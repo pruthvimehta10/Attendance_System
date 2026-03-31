@@ -42,7 +42,12 @@ def _init_db(app):
         return
 
     try:
-        import psycopg2
+        try:
+            import psycopg2
+        except ImportError:
+            print('[init_db] psycopg2 not installed locally — skipping init_db.sql.', flush=True)
+            return
+            
         from urllib.parse import urlparse
 
         print('[init_db] Connecting to PostgreSQL…', flush=True)
