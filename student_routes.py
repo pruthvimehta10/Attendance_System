@@ -54,6 +54,13 @@ def mark_attendance():
 
     # Mark attendance
     student_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if student_ip:
+        student_ip = student_ip.split(',')[0].strip()
+
+    if student_ip != session.teacher_ip:
+        flash('You must be on the same WiFi network as the teacher to mark attendance.', 'danger')
+        return redirect(url_for('student.dashboard'))
+
     record = AttendanceRecord(session_id=session.id, student_id=current_user.id, timestamp=now, student_ip=student_ip)
     db.session.add(record)
     db.session.commit()
@@ -88,6 +95,13 @@ def scan_qr():
         
         # Mark attendance
         student_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if student_ip:
+            student_ip = student_ip.split(',')[0].strip()
+
+        if student_ip != session.teacher_ip:
+            flash('You must be on the same WiFi network as the teacher to mark attendance.', 'danger')
+            return redirect(url_for('student.scan_qr'))
+
         record = AttendanceRecord(session_id=session.id, student_id=current_user.id, timestamp=now, student_ip=student_ip)
         db.session.add(record)
         db.session.commit()

@@ -48,6 +48,9 @@ def start_session():
     # Use actual network IP instead of localhost
     import socket
     teacher_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if teacher_ip:
+        teacher_ip = teacher_ip.split(',')[0].strip()
+
     if teacher_ip == '127.0.0.1' or teacher_ip == 'localhost':
         # Get actual network IP
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
