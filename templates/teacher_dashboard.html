@@ -185,7 +185,7 @@
                         <h5><i class="fas fa-clock me-2"></i>Active Session</h5>
                         <p class="mb-1"><strong>Session ID:</strong> {{ active_session.id }}</p>
                         <p class="mb-1 text-info"><strong>Ends at (IST):</strong> {{ active_session.end_time | format_ist_time }}</p>
-                        <p class="mb-0"><strong>Remaining:</strong> <span class="badge bg-danger">{{ remaining|int }} seconds</span></p>
+                        <p class="mb-0"><strong>Remaining:</strong> <span class="badge bg-danger" id="countdown-timer" data-remaining="{{ remaining|int }}">{{ remaining|int }} seconds</span></p>
                     </div>
                     <div class="text-end">
                         <div class="pulse">
@@ -249,6 +249,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Countdown Timer Logic
+        const timerElement = document.getElementById('countdown-timer');
+        if (timerElement) {
+            let remainingSeconds = parseInt(timerElement.getAttribute('data-remaining'));
+            
+            const countdownInterval = setInterval(() => {
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownInterval);
+                    timerElement.textContent = "Session Ended";
+                    timerElement.classList.replace('bg-danger', 'bg-secondary');
+                    setTimeout(() => location.reload(), 2000); // Reload after end
+                } else {
+                    remainingSeconds--;
+                    let minutes = Math.floor(remainingSeconds / 60);
+                    let seconds = remainingSeconds % 60;
+                    if (minutes > 0) {
+                        timerElement.textContent = `${minutes}m ${seconds}s`;
+                    } else {
+                        timerElement.textContent = `${seconds} seconds`;
+                    }
+                }
+            }, 1000);
+        }
+
         // Load recent sessions
         fetchRecentSessions();
         
