@@ -166,37 +166,44 @@
         </div>
         {% endfor %} {% endif %} {% endwith %}
         
-        {% if active_session %}
-        <div class="card mb-4 session-card fade-in">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5><i class="fas fa-clock me-2"></i>Active Session</h5>
-                        <p class="mb-1 porsche-font" style="color: var(--primary-red);">{{ active_session.name or 'Session ' ~ active_session.id }}</p>
-                        <p class="mb-1"><strong>Teacher IP:</strong> {{ active_session.teacher_ip }}</p>
-                        <p class="mb-1 text-info"><strong>Ends at (IST):</strong> {{ active_session.end_time | format_ist_time }}</p>
-                    </div>
-                    <div class="text-end">
-                        <div class="pulse">
-                            <i class="fas fa-circle text-success" style="font-size: 2rem;"></i>
+        {% if active_sessions %}
+        <h5 class="mb-3"><i class="fas fa-list-ul me-2"></i>Active Classes</h5>
+        <div class="row">
+            {% for session in active_sessions %}
+            <div class="col-md-6">
+                <div class="card mb-4 session-card fade-in">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-2 porsche-font" style="color: var(--primary-red);">{{ session.name or 'Session ' ~ session.id }}</h5>
+                                <p class="mb-1 text-info"><i class="fas fa-user-tie me-1"></i> Teacher: {{ session.teacher.name }}</p>
+                                <p class="mb-1 text-muted small"><i class="fas fa-clock me-1"></i> Ends at: {{ session.end_time | format_ist_time }}</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="pulse">
+                                    <i class="fas fa-circle text-success" style="font-size: 1.2rem;"></i>
+                                </div>
+                                <p class="text-muted small mt-1">LIVE</p>
+                            </div>
                         </div>
-                        <p class="text-muted small mt-2">LIVE</p>
+                        
+                        <form method="post" action="{{ url_for('student.mark_attendance') }}" class="mt-3">
+                            <input type="hidden" name="session_id" value="{{ session.id }}">
+                            <button class="btn btn-primary w-100" type="submit">
+                                <i class="fas fa-check-circle me-2"></i>Mark Attendance
+                            </button>
+                        </form>
                     </div>
                 </div>
-                
-                <form method="post" action="{{ url_for('student.mark_attendance') }}" class="mt-3">
-                    <input type="hidden" name="session_id" value="{{ active_session.id }}">
-                    <button class="btn btn-primary btn-lg w-100" type="submit">
-                        <i class="fas fa-check-circle me-2"></i>Mark Attendance
-                    </button>
-                </form>
             </div>
+            {% endfor %}
         </div>
         {% else %}
         <div class="card mb-4 session-card fade-in">
-            <div class="card-body text-center">
-                <h5><i class="fas fa-pause-circle me-2"></i>No Active Session</h5>
-                <p class="text-muted">Wait for your teacher to start an attendance session</p>
+            <div class="card-body text-center py-5">
+                <i class="fas fa-moon text-muted mb-3" style="font-size: 3rem;"></i>
+                <h5 class="text-muted">No Active Sessions</h5>
+                <p class="text-muted mb-0">Wait for your teacher to start an attendance session</p>
             </div>
         </div>
         {% endif %}
