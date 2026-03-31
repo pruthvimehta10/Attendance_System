@@ -7,6 +7,7 @@
     <title>Student Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-red: #dc3545;
@@ -21,7 +22,13 @@
             background: linear-gradient(135deg, #1a1a1a 0%, #2d1b1b 100%);
             color: var(--dark-text);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6, .porsche-font {
+            font-family: 'Syncopate', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         .container {
@@ -165,7 +172,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h5><i class="fas fa-clock me-2"></i>Active Session</h5>
-                        <p class="mb-1"><strong>Session ID:</strong> {{ active_session.id }}</p>
+                        <p class="mb-1 porsche-font" style="color: var(--primary-red);">{{ active_session.name or 'Session ' ~ active_session.id }}</p>
                         <p class="mb-1"><strong>Teacher IP:</strong> {{ active_session.teacher_ip }}</p>
                         <p class="mb-1 text-info"><strong>Ends at (IST):</strong> {{ active_session.end_time | format_ist_time }}</p>
                     </div>

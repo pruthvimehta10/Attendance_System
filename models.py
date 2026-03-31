@@ -17,6 +17,7 @@ class User(UserMixin, db.Model):
 class AttendanceSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=True)  # Name of the class/attendance
     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     end_time = db.Column(db.DateTime, nullable=False)
     teacher_ip = db.Column(db.String(100), nullable=False)

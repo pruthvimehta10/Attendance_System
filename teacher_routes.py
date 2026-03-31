@@ -41,6 +41,9 @@ def dashboard():
 @teacher_required
 def start_session():
     # fixed window (5 minutes) or configurable via form
+    session_name = request.form.get('name', 'Unnamed Session').strip()
+    if not session_name:
+        session_name = 'Unnamed Session'
     minutes = int(request.form.get('minutes', 5))
     start = datetime.utcnow()
     end = start + timedelta(minutes=minutes)
@@ -60,13 +63,14 @@ def start_session():
     
     session = AttendanceSession(
         teacher_id=current_user.id, 
+        name=session_name,
         start_time=start, 
         end_time=end, 
         teacher_ip=teacher_ip
     )
     db.session.add(session)
     db.session.commit()
-    flash(f'Attendance session started for {minutes} minutes.', 'success')
+    flash(f'Attendance session "{session_name}" started for {minutes} minutes.', 'success')
     return redirect(url_for('teacher.dashboard'))
 
 
@@ -98,6 +102,7 @@ def recent_sessions():
         attendance_count = AttendanceRecord.query.filter_by(session_id=session.id).count()
         session_data.append({
             'id': session.id,
+            'name': session.name or f'Session {session.id}',
             'start_time': session.start_time.isoformat(),
             'end_time': session.end_time.isoformat(),
             'attendance_count': attendance_count
