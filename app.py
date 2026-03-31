@@ -191,6 +191,16 @@ def create_app():
         db.create_all()
         _seed_sample_users(app)
 
+        # Seed initial users if the database is empty
+        from models import User
+        if not User.query.first():
+            from werkzeug.security import generate_password_hash
+            teacher = User(name='Test Teacher', email='teacher@example.com', password_hash=generate_password_hash('password'), role='teacher')
+            student = User(name='Test Student', email='student@example.com', password_hash=generate_password_hash('password'), role='student')
+            db.session.add_all([teacher, student])
+            db.session.commit()
+            print('Initialized DB with sample users.')
+
     return app
 
 
