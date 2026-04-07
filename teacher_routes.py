@@ -4,12 +4,10 @@ from datetime import datetime, timedelta
 import qrcode
 import io
 import uuid
-import os
-import smtplib
-from email.message import EmailMessage
 from fpdf import FPDF
 from database import db
 from models import AttendanceSession, AttendanceRecord, User
+from utils import send_email
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -158,35 +156,19 @@ def email_attendance(session_id):
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
     # 2. Send Email
-    smtp_email = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASS')
-    
-    if not smtp_email or not smtp_password:
-        flash('SMTP credentials not configured.', 'danger')
-        return redirect(url_for('teacher.view_attendance', session_id=session_id))
-    
-    msg = EmailMessage()
-    msg['Subject'] = f'Attendance Report - {session_title}'
-    msg['From'] = smtp_email
-    msg['To'] = current_user.email
-    msg.set_content(f'Hello {current_user.name},\n\nPlease find attached the attendance report for the session "{session_title}".\n\nTotal Students Present: {len(records)}')
-    
-    # Attach PDF
-    msg.add_attachment(
-        pdf_output,
-        maintype='application',
-        subtype='pdf',
-        filename=f'Attendance_{session.id}.pdf'
+    email_body = (
+        f'Hello {current_user.name},\n\n'
+        f'Please find attached the attendance report for the session "{session_title}".\n\n'
+        f'Total Students Present: {len(records)}'
     )
-    
-    try:
-        with smtplib.SMTP(os.environ.get('SMTP_HOST', 'smtp.gmail.com'), int(os.environ.get('SMTP_PORT', 587))) as server:
-            server.starttls()
-            server.login(smtp_email, smtp_password)
-            server.send_message(msg)
-        flash('Attendance report emailed successfully.', 'success')
-    except Exception as e:
-        flash(f'Failed to send email: {str(e)}', 'danger')
-        print(f"[email_attendance] Error sending email: {e}")
-        
+    success = send_email(
+        current_user.email,
+        f'Attendance Report - {session_title}',
+        email_body,
+    )
+    if not success:
+        flash('Failed to send email.', 'danger')
+        return redirect(url_for('teacher.view_attendance', session_id=session_id))
+
+    flash('Attendance report emailed successfully.', 'success')
     return redirect(url_for('teacher.view_attendance', session_id=session_id))
