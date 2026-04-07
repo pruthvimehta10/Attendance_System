@@ -7,7 +7,7 @@ import uuid
 from fpdf import FPDF
 from database import db
 from models import AttendanceSession, AttendanceRecord, User
-from utils import send_email
+# send_email import removed — outbound SMTP (Gmail) is blocked on Railway's network
 
 teacher_bp = Blueprint('teacher', __name__, url_prefix='/teacher')
 
@@ -155,20 +155,10 @@ def email_attendance(session_id):
     # Output to binary string
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
-    # 2. Send Email
-    email_body = (
-        f'Hello {current_user.name},\n\n'
-        f'Please find attached the attendance report for the session "{session_title}".\n\n'
-        f'Total Students Present: {len(records)}'
-    )
-    success = send_email(
-        current_user.email,
-        f'Attendance Report - {session_title}',
-        email_body,
-    )
-    if not success:
-        flash('Failed to send email.', 'danger')
-        return redirect(url_for('teacher.view_attendance', session_id=session_id))
-
-    flash('Attendance report emailed successfully.', 'success')
+    # Email sending is disabled — outbound SMTP connections to smtp.gmail.com:587
+    # are blocked on Railway's network, causing gunicorn worker timeouts and 500
+    # errors.  For production use, replace this with a transactional email service
+    # (SendGrid, Mailgun, AWS SES) or a background task queue (Celery, RQ) so the
+    # SMTP call does not block the request worker.
+    flash('Attendance report generated successfully.', 'success')
     return redirect(url_for('teacher.view_attendance', session_id=session_id))
