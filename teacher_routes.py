@@ -158,8 +158,8 @@ def email_attendance(session_id):
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
     # 2. Send Email
-    smtp_email = os.environ.get('SMTP_EMAIL')
-    smtp_password = os.environ.get('SMTP_PASSWORD')
+    smtp_email = os.environ.get('SMTP_USER')
+    smtp_password = os.environ.get('SMTP_PASS')
     
     if not smtp_email or not smtp_password:
         flash('SMTP credentials not configured.', 'danger')
@@ -180,7 +180,7 @@ def email_attendance(session_id):
     )
     
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        with smtplib.SMTP(os.environ.get('SMTP_HOST', 'smtp.gmail.com'), int(os.environ.get('SMTP_PORT', 587))) as server:
             server.starttls()
             server.login(smtp_email, smtp_password)
             server.send_message(msg)
