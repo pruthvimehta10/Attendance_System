@@ -158,39 +158,30 @@ def email_attendance(session_id):
     # Output to binary string
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
-    # 2. Send Email
-    smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-    smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_email = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASS')
+    # 2. Send Email via Resend HTTP API
+    import resend
+    resend.api_key = os.environ.get('RESEND_API_KEY')
     
-    if not smtp_email or not smtp_password:
-        flash('SMTP credentials not configured.', 'danger')
+    if not resend.api_key:
+        flash('Resend API key not configured.', 'danger')
         return redirect(url_for('teacher.view_attendance', session_id=session_id))
     
-    msg = EmailMessage()
-    msg['Subject'] = f'Attendance Report - {session_title}'
-    msg['From'] = smtp_email
-    msg['To'] = current_user.email
-    msg.set_content(f'Hello {current_user.name},\n\nPlease find attached the attendance report for the session "{session_title}".\n\nTotal Students Present: {len(records)}')
-    
-    # Attach PDF
-    msg.add_attachment(
-        pdf_output,
-        maintype='application',
-        subtype='pdf',
-        filename=f'Attendance_{session.id}.pdf'
-    )
-    
     try:
-        # Added timeout to prevent Gunicorn worker freezing if Railway blocks SMTP outbound ports
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-            server.starttls()
-            server.login(smtp_email, smtp_password)
-            server.send_message(msg)
+        resend.Emails.send({
+            "from": "onboarding@resend.dev",
+            "to": current_user.email,
+            "subject": f'Attendance Report - {session_title}',
+            "html": f'<p>Hello {current_user.name},</p><p>Please find attached the attendance report for the session "<b>{session_title}</b>".</p><p>Total Students Present: <b>{len(records)}</b></p>',
+            "attachments": [
+                {
+                    "filename": f'Attendance_{session.id}.pdf',
+                    "content": list(pdf_output)
+                }
+            ]
+        })
         flash('Attendance report emailed successfully.', 'success')
     except Exception as e:
-        flash(f'Failed to send email. If hosted on Railway, SMTP ports may be blocked. Error: {str(e)}', 'danger')
-        print(f"[email_attendance] Error sending email: {e}")
+        flash(f'Failed to send email via Resend. Error: {str(e)}', 'danger')
+        print(f"[email_attendance] Error sending email via Resend: {e}")
         
     return redirect(url_for('teacher.view_attendance', session_id=session_id))
