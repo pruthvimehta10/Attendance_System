@@ -4,6 +4,10 @@ from datetime import datetime, timedelta
 import qrcode
 import io
 import uuid
+import os
+import smtplib
+from email.message import EmailMessage
+from fpdf import FPDF
 from database import db
 from models import AttendanceSession, AttendanceRecord, User
 
@@ -109,3 +113,80 @@ def recent_sessions():
         })
     
     return jsonify({'sessions': session_data})
+
+@teacher_bp.route('/attendance/<int:session_id>/email', methods=['POST'])
+@login_required
+@teacher_required
+def email_attendance(session_id):
+    session = AttendanceSession.query.get_or_404(session_id)
+    if session.teacher_id != current_user.id:
+        flash('Access denied.', 'danger')
+        return redirect(url_for('teacher.dashboard'))
+    
+    records = AttendanceRecord.query.filter_by(session_id=session_id).all()
+    
+    # 1. Generate PDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    
+    # Title
+    session_title = session.name or f'Session {session.id}'
+    pdf.cell(0, 10, f'Attendance Report: {session_title}', ln=True, align='C')
+    
+    # Date and Time
+    pdf.set_font('Arial', '', 12)
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    pdf.cell(0, 10, f'Generated at: {now_ist.strftime("%Y-%m-%d %H:%M:%S")} IST', ln=True, align='C')
+    
+    pdf.ln(10)
+    
+    # Table Header
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(80, 10, 'Student Name', border=1)
+    pdf.cell(110, 10, 'Email', border=1)
+    pdf.ln()
+    
+    # Table Body
+    pdf.set_font('Arial', '', 12)
+    for record in records:
+        pdf.cell(80, 10, str(record.student.name), border=1)
+        pdf.cell(110, 10, str(record.student.email), border=1)
+        pdf.ln()
+    
+    # Output to binary string
+    pdf_output = pdf.output(dest='S').encode('latin-1')
+    
+    # 2. Send Email
+    smtp_email = os.environ.get('SMTP_EMAIL')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+    
+    if not smtp_email or not smtp_password:
+        flash('SMTP credentials not configured.', 'danger')
+        return redirect(url_for('teacher.view_attendance', session_id=session_id))
+    
+    msg = EmailMessage()
+    msg['Subject'] = f'Attendance Report - {session_title}'
+    msg['From'] = smtp_email
+    msg['To'] = current_user.email
+    msg.set_content(f'Hello {current_user.name},\n\nPlease find attached the attendance report for the session "{session_title}".\n\nTotal Students Present: {len(records)}')
+    
+    # Attach PDF
+    msg.add_attachment(
+        pdf_output,
+        maintype='application',
+        subtype='pdf',
+        filename=f'Attendance_{session.id}.pdf'
+    )
+    
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.send_message(msg)
+        flash('Attendance report emailed successfully.', 'success')
+    except Exception as e:
+        flash(f'Failed to send email: {str(e)}', 'danger')
+        print(f"[email_attendance] Error sending email: {e}")
+        
+    return redirect(url_for('teacher.view_attendance', session_id=session_id))

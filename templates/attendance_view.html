@@ -210,6 +210,11 @@
         {% endif %}
 
         <div class="mt-4 text-end">
+            <form action="{{ url_for('teacher.email_attendance', session_id=session.id) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-envelope me-2"></i>Email Attendance (PDF)
+                </button>
+            </form>
             <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
             </a>
