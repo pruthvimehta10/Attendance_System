@@ -5,6 +5,9 @@ import qrcode
 import io
 import uuid
 from fpdf import FPDF
+import os
+import smtplib
+from email.message import EmailMessage
 from database import db
 from models import AttendanceSession, AttendanceRecord, User
 # send_email import removed — outbound SMTP (Gmail) is blocked on Railway's network
