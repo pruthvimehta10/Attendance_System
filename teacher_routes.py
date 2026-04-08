@@ -135,10 +135,14 @@ def download_attendance(session_id):
     session_title = session.name or f'Session {session.id}'
     pdf.cell(0, 10, f'Attendance Report: {session_title}', ln=True, align='C')
     
-    # Date and Time
+    # Session Date and Time
     pdf.set_font('Arial', '', 12)
-    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
-    pdf.cell(0, 10, f'Generated at: {now_ist.strftime("%Y-%m-%d %H:%M:%S")} IST', ln=True, align='C')
+    session_start_ist = session.start_time + timedelta(hours=5, minutes=30)
+    session_end_ist = session.end_time + timedelta(hours=5, minutes=30)
+    date_str = session_start_ist.strftime("%Y-%m-%d")
+    time_str = f"{session_start_ist.strftime('%H:%M:%S')} to {session_end_ist.strftime('%H:%M:%S')} IST"
+    
+    pdf.cell(0, 10, f'Session Date: {date_str}  |  Time: {time_str}', ln=True, align='C')
     
     pdf.ln(10)
     
