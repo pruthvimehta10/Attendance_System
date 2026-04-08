@@ -115,10 +115,10 @@ def recent_sessions():
     
     return jsonify({'sessions': session_data})
 
-@teacher_bp.route('/attendance/<int:session_id>/email', methods=['POST'])
+@teacher_bp.route('/attendance/<int:session_id>/download', methods=['GET'])
 @login_required
 @teacher_required
-def email_attendance(session_id):
+def download_attendance(session_id):
     session = AttendanceSession.query.get_or_404(session_id)
     if session.teacher_id != current_user.id:
         flash('Access denied.', 'danger')
@@ -158,30 +158,10 @@ def email_attendance(session_id):
     # Output to binary string
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
-    # 2. Send Email via Resend HTTP API
-    import resend
-    resend.api_key = os.environ.get('RESEND_API_KEY')
-    
-    if not resend.api_key:
-        flash('Resend API key not configured.', 'danger')
-        return redirect(url_for('teacher.view_attendance', session_id=session_id))
-    
-    try:
-        resend.Emails.send({
-            "from": "onboarding@resend.dev",
-            "to": current_user.email,
-            "subject": f'Attendance Report - {session_title}',
-            "html": f'<p>Hello {current_user.name},</p><p>Please find attached the attendance report for the session "<b>{session_title}</b>".</p><p>Total Students Present: <b>{len(records)}</b></p>',
-            "attachments": [
-                {
-                    "filename": f'Attendance_{session.id}.pdf',
-                    "content": list(pdf_output)
-                }
-            ]
-        })
-        flash('Attendance report emailed successfully.', 'success')
-    except Exception as e:
-        flash(f'Failed to send email via Resend. Error: {str(e)}', 'danger')
-        print(f"[email_attendance] Error sending email via Resend: {e}")
-        
-    return redirect(url_for('teacher.view_attendance', session_id=session_id))
+    # Return directly as downloadable file
+    return send_file(
+        io.BytesIO(pdf_output),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'Attendance_{session.id}.pdf'
+    )
