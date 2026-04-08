@@ -163,9 +163,10 @@ def download_attendance(session_id):
     pdf_output = pdf.output(dest='S').encode('latin-1')
     
     # Return directly as downloadable file
+    safe_filename = "".join([c if c.isalnum() else "_" for c in session_title])
     return send_file(
         io.BytesIO(pdf_output),
         mimetype='application/pdf',
         as_attachment=True,
-        download_name=f'Attendance_{session.id}.pdf'
+        download_name=f'{safe_filename}.pdf'
     )
