@@ -4,13 +4,11 @@ import traceback
 from flask import Flask
 from database import db
 from flask_login import LoginManager
-from flask_mail import Mail
 from dotenv import load_dotenv
 
 load_dotenv()
 
 login_manager = LoginManager()
-mail = Mail()
 
 
 def _init_db(app):
@@ -162,17 +160,8 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Flask-Mail / SMTP configuration
-    app.config['MAIL_SERVER'] = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-    app.config['MAIL_PORT'] = int(os.environ.get('SMTP_PORT', 587))
-    app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = os.environ.get('SMTP_USER')
-    app.config['MAIL_PASSWORD'] = os.environ.get('SMTP_PASS')
-    app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('SMTP_USER')
-
     db.init_app(app)
     login_manager.init_app(app)
-    mail.init_app(app)
     login_manager.login_view = 'auth.login'
 
     # Register user loader after login_manager initialized

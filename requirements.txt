@@ -1,14 +1,9 @@
 flask>=2.2
 flask-login
 flask-sqlalchemy
-flask-mail
 python-dotenv
 werkzeug
-qrcode[pil]
-pillow
 gunicorn
 psycopg2-binary
 pytz
 fpdf
-Flask-Mail
-resend

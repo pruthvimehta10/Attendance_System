@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS attendance_session (
     teacher_id INTEGER      NOT NULL REFERENCES "user"(id),
     start_time TIMESTAMP    NOT NULL DEFAULT NOW(),
     end_time   TIMESTAMP    NOT NULL,
-    teacher_ip VARCHAR(100) NOT NULL,
-    qr_code    VARCHAR(255)
+    teacher_ip VARCHAR(100) NOT NULL
 );
 
 -- Individual attendance records submitted by students

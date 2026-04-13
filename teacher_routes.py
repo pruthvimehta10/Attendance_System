@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
-import qrcode
 import io
 import uuid
 from fpdf import FPDF

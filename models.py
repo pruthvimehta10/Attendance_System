@@ -21,7 +21,6 @@ class AttendanceSession(db.Model):
     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     end_time = db.Column(db.DateTime, nullable=False)
     teacher_ip = db.Column(db.String(100), nullable=False)
-    qr_code = db.Column(db.String(255), nullable=True)  # Unique QR code for this session
 
     teacher = db.relationship('User', backref='sessions')
 

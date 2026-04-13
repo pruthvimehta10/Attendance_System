@@ -1,7 +1,6 @@
 """Utility functions for the Flask Attendance System"""
 from datetime import datetime
 import pytz
-from flask_mail import Message
 
 def get_ist_time():
     """Get current IST time"""
